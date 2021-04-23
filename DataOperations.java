@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Arrays;
 
+//Implements 4 data searching operations on swing data
 class DataOperations {
 
     static final String COMMA_DELIMITER = ",";
 
+    //creates data structure for aiding with search operations
     static class Data {
 
         List<List<String>> data;
@@ -222,6 +224,8 @@ class DataOperations {
     }
 
     public static void main( String[] args ) {
+
+        //Testing each function
 
         Data data = new Data("latestSwing.csv");
 
