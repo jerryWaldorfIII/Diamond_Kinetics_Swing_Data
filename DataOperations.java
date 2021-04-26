@@ -56,6 +56,92 @@ class DataOperations {
     }
 
     /*
+    Function: Helper Search method for searching through data
+    @param data1 (double[]): the first data we will be searching through
+    @param data2 (double[]): the second data we will be searching through
+    @param begin (int): the index we will begin searching through
+    @param end (int): the index we will end our search
+    @param thresh1 (double): the threshold for our data values to be higher than
+    @param thresh2 (double): the threshold for our data values to be lower than
+    @param winLength (int): the amount of datapoints in a row that need to be higher
+                            than threshold
+    @param forawrd (boolean): boolean for if we aresearching through the list in the forwards direction
+    @param between (boolean): boolean for if we consider both thresholds
+    @param multiData (boolean): boolean for if we are searching through multiple datas
+    @return int: the index of the first datapoint which starts a series as long as
+                winLength of datapoints which exceed threshold
+    */
+    public static int searchHelper( double[] data1, double[] data2, int begin, int end, double thresh1,
+        double thresh2, int winLength, boolean forward, boolean between, boolean multiData ) {
+
+        if( data1 == null || data2 == null || begin < 0 || begin >= data1.length || begin >= data2.length ||
+            begin > end || end < 0 || end >= data1.length || end >= data2.length || end - begin < winLength ) {
+                return -999;
+        }
+
+        int startIndex;
+        int endIndex;
+        if( forward ) {
+            startIndex = begin;
+            endIndex = end;
+        } else {
+            startIndex = end;
+            endIndex = begin;
+        }
+
+        int foundAbove = 0;
+        int start = startIndex;
+        while( startIndex != endIndex ) {
+            if( forward && !between && !multiData ) {
+                if( data1[startIndex] > thresh1 ) {
+                    foundAbove++;
+                    if( foundAbove >= winLength ) {
+                        return start;
+                    }
+                } else {
+                    foundAbove = 0;
+                    start = startIndex + 1;
+                }
+                startIndex++;
+            } else if( !forward && between && !multiData ) {
+                if( data1[startIndex] > thresh1 && data1[startIndex] < thresh2 ) {
+                    foundAbove++;
+                    if( foundAbove >= winLength ) {
+                        return start;
+                    }
+                } else {
+                    foundAbove = 0;
+                    start = startIndex - 1;
+                }
+                startIndex--;
+            } else if( forward && !between && multiData  ) {
+                if( data1[startIndex] > thresh1 && data2[startIndex] > thresh2 ) {
+                    foundAbove++;
+                    if( foundAbove >= winLength ) {
+                        return start;
+                    }
+                } else {
+                    foundAbove = 0;
+                    start = startIndex + 1;
+                }
+                startIndex++;
+            } else if( forward && between && !multiData ) {
+                if( data1[startIndex] > thresh1 &&  data1[startIndex] < thresh2 ) {
+                    foundAbove++;
+                    if( foundAbove >= winLength ) {
+                        return start;
+                    }
+                } else {
+                    foundAbove = 0;
+                    start = startIndex + 1;
+                }
+                startIndex++;
+            }
+        }
+        return -1;
+    }
+
+    /*
     Function: Search through data forwards for values that are higher than threshold
     @param data (double[]): the data we will be searching through
     @param indexBegin (int): the index we will begin searching through
@@ -69,28 +155,8 @@ class DataOperations {
     public static int searchContinuityAboveValue( double[] data, int indexBegin, int indexEnd,
         double threshold, int winLength ) {
 
-        if( data == null || indexBegin < 0 || indexBegin >= data.length ||
-            indexBegin > indexEnd || indexEnd < 0 || indexEnd >= data.length ||
-            indexEnd - indexBegin < winLength ) {
-                return -1;
-        }
+        return searchHelper( data, data, indexBegin, indexEnd, threshold, 0, winLength, true, false, false );
 
-        // int index = Collections.binarySearch( data, threshold );
-
-        int foundAbove = 0;
-        int start = 0;
-        for( int i = indexBegin; i <= indexEnd; i++ ) {
-            if( data[i] > threshold ) {
-                foundAbove++;
-                if( foundAbove >= winLength ) {
-                    return start;
-                }
-            } else {
-                foundAbove = 0;
-                start = i + 1;
-            }
-        }
-        return -1;
     }
 
     /*
@@ -108,26 +174,7 @@ class DataOperations {
     public static int backSearchContinuityWithinRange( double[] data, int indexBegin,
         int indexEnd, double thresholdLo, double thresholdHi, int winLength ) {
 
-        if( data == null || indexEnd < 0 || indexEnd >= data.length ||
-            indexEnd > indexBegin || indexBegin < 0 || indexBegin >= data.length ||
-            indexBegin - indexEnd < winLength ) {
-                return -1;
-        }
-
-        int foundAbove = 0;
-        int start = 0;
-        for( int i = indexBegin; i >= indexEnd; i-- ) {
-            if( data[i] > thresholdLo && data[i] < thresholdHi ) {
-                foundAbove++;
-                if( foundAbove >= winLength ) {
-                    return start;
-                }
-            } else {
-                foundAbove = 0;
-                start = i - 1;
-            }
-        }
-        return -1;
+        return searchHelper( data, data, indexEnd, indexBegin, thresholdLo, thresholdHi, winLength, false, true, false );
 
     }
 
@@ -146,27 +193,7 @@ class DataOperations {
     public static int searchContinuityAboveValueTwoSignals( double[] data1, double[] data2,
         int indexBegin, int indexEnd, double threshold1, double threshold2, int winLength ) {
 
-        if( data1 == null || data2 == null || indexEnd < 0 || indexEnd >= data1.length
-            || indexEnd >= data2.length || indexBegin > indexEnd || indexBegin < 0 ||
-            indexBegin >= data1.length || indexBegin >= data2.length ||
-            indexEnd - indexBegin < winLength ) {
-                return -1;
-        }
-
-        int foundAbove = 0;
-        int start = 0;
-        for( int i = indexBegin; i <= indexEnd; i++ ) {
-            if( data1[i] > threshold1 && data2[i] > threshold2 ) {
-                foundAbove++;
-                if( foundAbove >= winLength ) {
-                    return start;
-                }
-            } else {
-                foundAbove = 0;
-                start = i + 1;
-            }
-        }
-        return -1;
+        return searchHelper( data1, data2, indexBegin, indexEnd, threshold1, threshold2, winLength, true, false, true );
 
     }
 
@@ -180,10 +207,9 @@ class DataOperations {
     @param thresholdHi (double): the threshold for our data values to be lower than
     @param winLength (int): the amount of datapoints in a row that need to be higher
                             than threshold
-    @return int: the index of the first datapoint which starts a series as long as
-                winLength of datapoints which exceed threshold
+    @return int[]: the entries that meet winlength and are between both thresholds
     */
-    public static int[][] searchMultiContinuityWithinRange( double[] data, int indexBegin,
+    public static int[] searchMultiContinuityWithinRange( double[] data, int indexBegin,
     int indexEnd, double thresholdLo, double thresholdHi, int winLength) {
 
         List<Integer> samples = new ArrayList();
@@ -191,34 +217,21 @@ class DataOperations {
         if( data == null || indexBegin < 0 || indexBegin >= data.length ||
                 indexBegin > indexEnd || indexEnd < 0 || indexEnd >= data.length ||
                 indexEnd - indexBegin < winLength || thresholdHi < thresholdLo ) {
-                    return new int[0][0];
+                    return new int[0];
         }
 
-        int foundAbove = 0;
-        int start = 0;
-        for( int i = indexBegin; i <= indexEnd; i++ ) {
-            if( data[i] > thresholdLo && data[i] < thresholdHi ) {
-                foundAbove++;
-            } else if( foundAbove >= winLength ) {
-                samples.add( new Integer(start) );
-                samples.add( new Integer(i - 1) );
-                start = i + 1;
-                foundAbove = 0;
-            } else {
-                foundAbove = 0;
-                start = i + 1;
+        int found = searchHelper( data, data, indexBegin, indexEnd, thresholdLo, thresholdHi, winLength, true, true, false );
+        while( found != -1 && found != -999 ){
+            for( int i = found; i <= found + winLength; i++ ) {
+                samples.add( new Integer(i) );
             }
+            found = searchHelper( data, data, found + winLength, indexEnd, thresholdLo, thresholdHi, winLength, true, true, false );
         }
-        if( foundAbove >= winLength ) {
-            samples.add( new Integer(start) );
-            samples.add( new Integer(indexEnd) );
+        int[] sampleList = new int[samples.size()];
+        for( int i = 0; i < samples.size(); i++ ) {
+            sampleList[i] = samples.get(i);
         }
 
-        int[][] sampleList = new int[samples.size() / 2][2];
-        for( int i = 0; i < samples.size(); i+=2 ) {
-            sampleList[i][0] = samples.get(i);
-            sampleList[i][1] = samples.get(i+1);
-        }
         return sampleList;
 
     }
@@ -235,9 +248,9 @@ class DataOperations {
 
         System.out.println( searchContinuityAboveValueTwoSignals( data.ax, data.ay, 10, 40, 0.5, 1.2, 2 ) == 33);
 
-        int[][] test = searchMultiContinuityWithinRange( data.ax, 10, 30, 0, 1, 5 );
-        System.out.println(test[0][0] == 20);
-        System.out.println(test[0][1] == 30);
+        int[] test = searchMultiContinuityWithinRange( data.ax, 10, 30, 0, 1, 5 );
+        System.out.println(test[0] == 20);
+        System.out.println(test[10] == 29);
     }
 
 }
